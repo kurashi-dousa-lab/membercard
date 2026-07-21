@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>会員証</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "Hiragino Kaku Gothic ProN", sans-serif;
+      background: #f2f3f5; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .card {
+      width: 100%; max-width: 360px; color: #fff; border-radius: 20px; padding: 28px 24px;
+      background: linear-gradient(135deg, #06c755, #05a648);
+      box-shadow: 0 8px 24px rgba(0,0,0,.15);
+    }
+    .card .label { font-size: 12px; opacity: .85; letter-spacing: .1em; }
+    .card .name { font-size: 26px; font-weight: 700; margin: 4px 0 24px; }
+    .row { display: flex; gap: 12px; }
+    .box { flex: 1; background: rgba(255,255,255,.15); border-radius: 14px; padding: 16px; text-align: center; }
+    .box .num { font-size: 30px; font-weight: 700; }
+    .box .unit { font-size: 12px; opacity: .85; margin-top: 2px; }
+    .foot { margin-top: 22px; font-size: 11px; opacity: .8; text-align: center; }
+    .status { text-align: center; color: #666; font-size: 14px; padding: 40px 0; }
+  </style>
+</head>
+<body>
+  <div id="app"><div class="status">読み込み中…</div></div>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script>
+    // ▼▼▼ ここ2つを、あなたの値に書き換えてください ▼▼▼
+    const LIFF_ID = "2010776284-CELttCxq";        // 例: 2010776284-XXXXXXXX
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzOCpwIacyZhL5LjXLL8JZV41u1aFSbuNrfQ1CFcc9DjaeO9r_v4sDnT6YACoh-AoB2uw/exec";        // 例: https://script.google.com/macros/s/AKfy.../exec
+    // ▲▲▲ 上2つを書き換え。/exec で終わるURLです ▲▲▲
+
+    function showStatus(msg) {
+      document.getElementById('app').innerHTML = '<div class="status">' + msg + '</div>';
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function(c){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+      });
+    }
+    function render(data) {
+      document.getElementById('app').innerHTML =
+        '<div class="card">' +
+          '<div class="label">MEMBER CARD</div>' +
+          '<div class="name">' + escapeHtml(data.name) + ' 様</div>' +
+          '<div class="row">' +
+            '<div class="box"><div class="num">' + data.points + '</div><div class="unit">ポイント</div></div>' +
+            '<div class="box"><div class="num">' + data.visits + '</div><div class="unit">来店回数</div></div>' +
+          '</div>' +
+          '<div class="foot">会員証デモ / Nito</div>' +
+        '</div>';
+    }
+    // GAS からの JSONP コールバック
+    window.__onCardData = function(data) { render(data); };
+
+    async function main() {
+      if (LIFF_ID.indexOf('ここに') >= 0 || GAS_URL.indexOf('ここに') >= 0) {
+        showStatus('LIFF_ID と GAS_URL を設定してください。'); return;
+      }
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        if (!liff.isLoggedIn()) { liff.login(); return; }
+        const profile = await liff.getProfile();
+        const s = document.createElement('script');
+        s.src = GAS_URL + '?userId=' + encodeURIComponent(profile.userId) + '&callback=__onCardData';
+        s.onerror = function(){ showStatus('データ取得に失敗しました。'); };
+        document.body.appendChild(s);
+      } catch (e) {
+        showStatus('エラー：' + (e && e.message ? e.message : e));
+      }
+    }
+    main();
+  </script>
+</body>
+</html>
